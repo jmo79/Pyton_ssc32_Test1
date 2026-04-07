@@ -2,11 +2,38 @@ print("Hello SSC32 World!")
 
 import serial
 import time
+import tkinter as tk
 
 # ⚠️ Remplace 'COM3' par le port réel de ta SSC-32
-ser = serial.Serial('COM1', 2400, timeout=1)
+#ser = serial.serial('com1', 2400, timeout=1)
 
-time.sleep(2)  # laisse le temps à la carte de démarrer
+#time.sleep(2)  # laisse le temps à la carte de démarrer
+import tkinter as tk
+
+# Crée la fenêtre principale
+root = tk.Tk()  # T majuscule
+root.title("Interface SSC-32")
+root.geometry("300x150")  # largeur x hauteur
+
+# Fonction pour le premier bouton
+def bouton1_action():
+    print("Bouton 1 cliqué !")
+
+# Fonction pour le deuxième bouton
+def bouton2_action():
+    print("Bouton 2 cliqué !")
+
+# Création des boutons
+button1 = tk.Button(root, text="Bouton 1", command=bouton1_action)
+button1.pack(pady=10)  # pack avec un peu d'espace vertical
+
+button2 = tk.Button(root, text="Bouton 2", command=bouton2_action)
+button2.pack(pady=10)
+
+# Démarre la boucle principale de l'interface
+root.mainloop()
+
+"""
 
 # Déplacer le servo 0 à la position 1500 µs
 cmd = "#1P1800S250#2P1700S250#3P1000S250#4P1000S250#5P1000S250\r"
@@ -21,5 +48,5 @@ cmd = "#1P1500S250#2P1500S250#3P1500S250#4P1500S250#5P1500S250\r"
 ser.write(cmd.encode())
 
 print("Commande 2 envoyée au servos")
-
+"""
 ser.close()
