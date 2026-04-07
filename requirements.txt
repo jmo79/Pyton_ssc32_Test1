@@ -1,0 +1,3 @@
+#pyserial
+#pip install -r requirements.txt
+pyserial==3.8
