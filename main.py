@@ -1,11 +1,30 @@
-print("Hello SSC32 World!")
+#python -m compileall .
+#python -m py_compile main.py
 
-import serial
 import time
-import tkinter as tk
+from robot import *     #python -m py_compile main.py
+from Interface import * 
 
-# ⚠️ Remplace 'COM3' par le port réel de ta SSC-32
-#ser = serial.serial('com1', 2400, timeout=1)
+def ActionRobot():
+    Robot_Mvt1()
+    time.sleep(5)
+    Robot_Mvt2()
+    root.after(5000, ActionRobot)
+
+Robot_CommunicationStart()
+# --- Appel de la fonction pour créer la fenêtre ---
+root = creer_interface()
+
+# --- Démarre la boucle principale ---
+root.after(2, ActionRobot)
+root.mainloop()
+
+Robot_CommunicationStop()
+
+
+
+
+"""
 
 #time.sleep(2)  # laisse le temps à la carte de démarrer
 import tkinter as tk
@@ -32,7 +51,7 @@ button2.pack(pady=10)
 
 # Démarre la boucle principale de l'interface
 root.mainloop()
-
+"""
 """
 
 # Déplacer le servo 0 à la position 1500 µs
@@ -49,4 +68,4 @@ ser.write(cmd.encode())
 
 print("Commande 2 envoyée au servos")
 """
-ser.close()
+
