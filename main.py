@@ -5,18 +5,31 @@ import time
 from robot import *     #python -m py_compile main.py
 from Interface import * 
 
+numCyclage = 0
+
 def ActionRobot():
-    Robot_Mvt1()
-    time.sleep(5)
-    Robot_Mvt2()
-    root.after(5000, ActionRobot)
+ #   Robot_Mvt1()
+ #   time.sleep(5)
+ #   Robot_Mvt2()
+    global numCyclage 
+    numCyclage = 10 + numCyclage
+    print ("cylage" + str(numCyclage))
+    root.after(1000, ActionRobot)
+
+def start_robot():
+    print("Démarrage du robot")
+
+def stop_robot():
+    print("Arrêt du robot")
+
+
 
 Robot_CommunicationStart()
 # --- Appel de la fonction pour créer la fenêtre ---
-root = creer_interface()
+root = creer_interface(start_robot,stop_robot)
 
 # --- Démarre la boucle principale ---
-root.after(2, ActionRobot)
+root.after(0, ActionRobot)
 root.mainloop()
 
 Robot_CommunicationStop()
