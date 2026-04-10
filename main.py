@@ -3,7 +3,52 @@
 
 import time
 from robot import *     #python -m py_compile main.py
-from Interface import * 
+from Interface import *
+
+def SwithToManu():
+    print("Ask to switch to Manu")
+
+def SwithToAuto():
+    print("Ask to switch to Manu")
+
+InterfaceActions = {
+    "ModeManu": SwithToManu,
+    "ModeAuto": SwithToAuto,
+}
+def now_ms():
+    return int(time.perf_counter() * 1000)
+
+def create_ton(preset_ms):
+    return {
+        "IN": False,
+        "PRE": preset_ms,
+        "START": None,
+        "DN": False
+    }
+
+def update_ton(t, current_time_ms):
+    if t["IN"]:
+        
+        if t["START"] is None:
+            t["START"] = current_time_ms
+
+        t["ET"] = current_time_ms - t["START"]
+
+        if t["ET"] >= t["PT"]:
+            t["Q"] = True
+        else:
+            t["Q"] = False
+
+    else:
+        t["START"] = None
+        t["ET"] = 0
+        t["Q"] = False
+
+
+T1 = create_ton(2000)
+update_ton(T1,now_ms())
+
+
 
 numCyclage = 0
 
@@ -16,17 +61,13 @@ def ActionRobot():
     print ("cylage" + str(numCyclage))
     root.after(1000, ActionRobot)
 
-def start_robot():
-    print("Démarrage du robot")
 
-def stop_robot():
-    print("Arrêt du robot")
 
 
 
 Robot_CommunicationStart()
 # --- Appel de la fonction pour créer la fenêtre ---
-root = creer_interface(start_robot,stop_robot)
+root = creer_interface(InterfaceActions)
 
 # --- Démarre la boucle principale ---
 root.after(0, ActionRobot)
