@@ -15,6 +15,7 @@ def creer_interface(InterfaceActions):
 
     # Bouton Auto
     bouton_auto = tk.Button(root, text="Auto", command=InterfaceActions["ModeAuto"])
+    
     bouton_auto.pack(padx=10, pady=20)
 
 
