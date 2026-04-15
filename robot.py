@@ -6,6 +6,7 @@ ser = None # cariable global
 def Robot_CommunicationStart():
     global ser
     ser = serial.Serial('COM1', 115200, timeout=1)
+    
     time.sleep(2)  # laisse le temps à la carte de démarrer
 
 def Robot_CommunicationStop():
