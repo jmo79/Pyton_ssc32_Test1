@@ -8,6 +8,7 @@ def creer_interface(InterfaceActions):
     root.title("Interface SSC-32")
     root.geometry("300x200")
 
+
     # Bouton Manu
     bouton_manu = tk.Button(root, text="Manu", command=InterfaceActions["ModeManu"])
     bouton_manu.pack(padx=1, pady=1)
