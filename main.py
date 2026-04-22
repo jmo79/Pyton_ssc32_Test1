@@ -2,6 +2,7 @@
 #python -m py_compile main.py
 
 import time
+import mTimer
 from robot import *     #python -m py_compile main.py
 from Interface import *
 
@@ -15,39 +16,10 @@ InterfaceActions = {
     "ModeManu": SwithToManu,
     "ModeAuto": SwithToAuto,
 }
-def now_ms():
-    return int(time.perf_counter() * 1000)
-
-def create_ton(preset_ms):
-    return {
-        "IN": False,
-        "PRE": preset_ms,
-        "START": None,
-        "DN": False
-        
-    }
-
-def update_ton(t, current_time_ms):
-    if t["IN"]:
-        
-        if t["START"] is None:
-            t["START"] = current_time_ms
-
-        t["ET"] = current_time_ms - t["START"]
-
-        if t["ET"] >= t["PT"]:
-            t["Q"] = True
-        else:
-            t["Q"] = False
-
-    else:
-        t["START"] = None
-        t["ET"] = 0
-        t["Q"] = False
 
 
-T1 = create_ton(2000)
-update_ton(T1,now_ms())
+
+
 
 
 
@@ -61,6 +33,29 @@ def ActionRobot():
     numCyclage = 10 + numCyclage
     print ("cylage" + str(numCyclage))
     root.after(1000, ActionRobot)
+
+print(mTimer.__file__)
+print(dir(mTimer))
+print("=== JE SUIS LE BON MAIN ===")
+
+T1 = mTimer.create_ton(2000)
+T1["Q"]= False;
+T1["IN"]= True;
+
+
+while T1["Q"] == False:
+    mTimer.update_ton(T1,mTimer.now_ms())
+    print("wait timer T1: " + str(T1["ET"]))
+
+
+T2 = mTimer.TON(5000)
+T2.IN = True
+
+while T2.DN == False:
+    T2.update(mTimer.now_ms())
+    print("wait timer T2: " + str(T2.ET))
+
+"""
 
 
 
@@ -76,7 +71,7 @@ root.mainloop()
 
 Robot_CommunicationStop()
 
-
+"""
 
 
 """
