@@ -39,14 +39,14 @@ class TON:
         self.DN=    False
         self.ET=    0
     
-    def update(self, now_ms):
+    def update(self):
         if self.IN:
             if self.START is None:
-                self.START = now_ms
+                self.START = now_ms()
 
-            self.ET = now_ms - self.START
+            self.ET = now_ms() - self.START
 
-            if now_ms - self.START >= self.PRE:
+            if now_ms() - self.START >= self.PRE:
                 self.DN = True
         else:
             self.START = None

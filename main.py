@@ -52,8 +52,18 @@ T2 = mTimer.TON(5000)
 T2.IN = True
 
 while T2.DN == False:
-    T2.update(mTimer.now_ms())
-    print("wait timer T2: " + str(T2.ET))
+    T2.update()
+    print("wait timer T2a: " + str(T2.ET))
+T2.IN = False
+T2.update()  
+T2.PRE = 3500
+T2.IN = True
+while T2.DN == False:
+    T2.update()
+    print("wait timer T2b: " + str(T2.ET) )
+
+   
+
 
 """
 
