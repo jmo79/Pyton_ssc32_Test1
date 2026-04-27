@@ -3,6 +3,8 @@
 
 import time
 import mTimer
+import mG7
+
 from robot import *     #python -m py_compile main.py
 from Interface import *
 
@@ -41,6 +43,17 @@ print("=== JE SUIS LE BON MAIN ===")
 T1 = mTimer.create_ton(2000)
 T1["Q"]= False;
 T1["IN"]= True;
+
+
+G7_test = mG7.G7_Test()
+
+while G7_test.G7.num != 10:
+    G7_test.update()
+
+print("debut time.sleep(3)")
+time.sleep(3)
+
+
 
 
 while T1["Q"] == False:

@@ -51,3 +51,4 @@ class TON:
         else:
             self.START = None
             self.DN = False
+            self.ET = 0
