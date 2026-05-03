@@ -1,6 +1,7 @@
 import serial
 import time
 
+
 ser = None # cariable global
 
 def Robot_CommunicationStart():
@@ -26,3 +27,16 @@ def Robot_Mvt2():
     cmd = "#1P1500S50#2P1500S50#3P1500S50#4P1500S50#5P1500S50\r"
     ser.write(cmd.encode())
     print("Commande Mvt2 envoyée au servos")
+
+class G7_Test_StepDef(Enum):
+    E00_Init =      (0, "Init")
+    E01_Stating =   (1, "Stating")
+    E02 =           (2, "Step02")
+    E03 =           (3, "Step02")
+    E10_End =       (10, "End")
+    E99_Error =     (99, "Error")
+
+    def __init__(self,num,label):
+        self.num = num  
+        self.label = label 
+

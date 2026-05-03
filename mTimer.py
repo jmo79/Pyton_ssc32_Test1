@@ -52,3 +52,6 @@ class TON:
             self.START = None
             self.DN = False
             self.ET = 0
+    
+    def reset(self):
+        self.START = now_ms()
