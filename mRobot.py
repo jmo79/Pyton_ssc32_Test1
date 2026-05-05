@@ -49,14 +49,17 @@ class Rob1Management:
         
 
     
-    def TrajHomeToPick(self):
+    def TrajHomeToPick(self):        
+        pass
+
+    def TrajPickToHome(self):
+        pass
         
+
+    def TrajHomeToPlace(self):
         pass
 
-    def TrajPlace(self):
-        pass
-
-    def TrajPick(self):
+    def TrajPlaceToHome(self):
         pass
 
 

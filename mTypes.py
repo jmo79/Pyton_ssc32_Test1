@@ -20,7 +20,6 @@ class RobotExchangeSts:
     WorkZoneFree      : list[bool] = field(default_factory = lambda:[False]*N)              # egal True si robot hors zone
     DynMonitoringActivated : list[bool] = field(default_factory = lambda:[False]*N)
 
-
 @dataclass
 class RobotExchange:
     Cmd : RobotExchangeCmd = field(default_factory=RobotExchangeCmd)
