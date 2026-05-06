@@ -40,3 +40,4 @@ class G7_Test_StepDef(Enum):
         self.num = num  
         self.label = label 
 
+
