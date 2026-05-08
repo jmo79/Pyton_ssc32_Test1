@@ -93,95 +93,169 @@ class SSC32ComRS232:
         for s in servos:
             cmd += f"#{s.id.value}P{s.pos}S{s.speed}"
 
- #   def RunSequence(self,moves: list[*servos : ServoMove]):
-  #      for move in moves:
+    def MoveList(self,moves:list[ServoMove]):
+        print("MoveServoListe")
+
+
+class RobotMoveSequenceStatus(Enum):
+    IDLE = auto()
+    RUNNING  = auto()
+    FINISHED  = auto()
+    ERROR = auto()
+
+class RobotMoveSequence:
+
+    def __init__(self, SSC32ComRS232):
+        self.SSC32ComRS232 = SSC32ComRS232
+        self.status = RobotMoveSequenceStatus.IDLE
+        self.step = 0
+        self.current_pose_index=0
+        self.start_request = False
+        self.stop_request = False
+        self.reset_cycle_request = False
+        self.reset_all_request = False
+        self.ton_step = mTimer.TON(20)
+
+    def start(self, poses:list[list[ServoMove]]):
+        self.poses = poses                  # recuperation de la liste de positions
+        self.start_request = True           # demande de demmarage
+    
+    def stop(self):
+        self.stop_request = False
+
+    def reset_cycle(self):
+        self.reset_cycle_request = True
+
+    def reset_all(self):
+        self.reset_all_request = True
+
+    def _reset_cycle(self):
+        self.step = 0
+        self.current_pose_index = 0
+        self.status = RobotMoveSequenceStatus.IDLE 
+
+    def _reset_all(self):
+        self.step = 0
+        self.current_pose_index = 0
+        self.status = RobotMoveSequenceStatus.IDLE 
+        self.start_request = False
+    
+    def update(self):
+        #ERROR
+        #STOP
+        #RESET
+        #START
+        #NORMAL RUN
+        
+        if self.reset_all_request:
+            self.reset_all_request = False
+            self._reset_all()
+            return
+
+        if self.reset_cycle_request and self.step == 6:
+            self.reset_cycle_request = False
+            self._reset_cycle()
+            return
+
+        match self.step:
+            case 0: # Attente demarrage
+                if self.start_request:
+                    self.start_request = False
+                    self.step = 1
+                    self.current_pose_index = 0
+  
+            case 1: # commande de position
+                pose = self.poses[self.current_pose_index]
+                self.SSC32ComRS232.MoveJ(*pose)
+                self.ton_step.reset()
+                self.step = 2
+            case 2: # petite attente avant envoi question mouvement (20ms)                
+                self.ton_step.IN = True
+                self.ton_step.update()
+                if self.ton_step.DN:
+                    self.step = 3    
+            case 3: # commande Question mouvement en cours
+                self.SSC32ComRS232.ComSerie.write(b"Q\r")
+                self.ton_step.reset()
+                self.step = 4
+            case 4: # petite attente avant lecture reponse (20ms)                
+                self.ton_step.IN = True
+                self.ton_step.update()
+                if self.ton_step.DN:
+                    self.step = 5  
+            case 5: # lecture reponse
+                if self.SSC32ComRS232.ComSerie.in_waiting > 0:
+                    resp = self.SSC32ComRS232.ComSerie.read(1).decode()
+                    if resp == ".":     # reponse Mvt treminée
+                        self.current_pose_index += 1
+                        print("Class Mouvement terminé n°:" + str(self.current_pose_index) +"/" + str(len(self.poses)) )
+                        if self.current_pose_index >= len(self.poses):
+                            print("Class Sequence terminé")
+                            self.step = 6 
+                        else:
+                            self.step = 1 
+
+                    else:      # pas de reponse Mvt
+                        self.step = 2 
+            case 6: # sequence terminée
+                pass
+
+
+        if self.step == 0:
+            self.status = RobotMoveSequenceStatus.IDLE    
+        elif self.step == 6:
+            self.status = RobotMoveSequenceStatus.FINISHED   
+        else:
+            self.status = RobotMoveSequenceStatus.RUNNING
 
 
 
-
-
+ ################## Test Module   
 
 if __name__=="__main__":
     R1ComRS232 = SSC32ComRS232()
+    r1_move_sequence_pick = RobotMoveSequence(R1ComRS232)
     R1ComRS232.CommStart()
     time.sleep(1)
     #R1ComRS232.MoveJ_Init()
 
-    pose1 = (ServoMove(ServoId.P00,90,300),
+    pose1 = [ServoMove(ServoId.P00,90,300),
             ServoMove(ServoId.P01,145,500),
             ServoMove(ServoId.P02,145,500),
             ServoMove(ServoId.P03,45,500),
             ServoMove(ServoId.P04,90,500),
-            ServoMove(ServoId.P05,90,500))
+            ServoMove(ServoId.P05,90,500)]
     
-    pose2 = (ServoMove(ServoId.P00,90,300),
+    pose2 = [ServoMove(ServoId.P00,90,300),
             ServoMove(ServoId.P01,90,500),
             ServoMove(ServoId.P02,90,500),
             ServoMove(ServoId.P03,0,500),
             ServoMove(ServoId.P04,00,1000),
-            ServoMove(ServoId.P05,20,1000))
+            ServoMove(ServoId.P05,20,1000)]
     
-    poses = [pose1,pose2,pose1,pose2]
-
-    for pose in poses:          # NULLLLLLLLLLLLLLLLLLLLLLLLLL NULLLL
-        step = 1
-        match step:
-            case 1: # commande de position
-                R1ComRS232.MoveJ(*pose)
-                step = 2
-            case 2: # petite attente avant envoi question mouvement (20ms)
-                tonStep2 = mTimer.TON(20)
-                tonStep2.IN = True
-                tonStep2.update()
-                if tonStep2.DN:
-                    step = 3    
-            case 3: # commande Question mouvement en cours
-                R1ComRS232.ComSerie.write(b"Q\r")
-                step = 4
-            case 4: # petite attente lecture reponse (20ms)
-                tonStep2.reset()
-                if tonStep2.DN:
-                    step = 5  
+    poses_pick = [pose1,pose2,pose1,pose2]
+    poses_place = [pose1,pose2,pose1,pose2]
 
 
-      
-    R1ComRS232.MoveJ(ServoMove(ServoId.P00,90,300),
-                    ServoMove(ServoId.P01,145,500),
-                    ServoMove(ServoId.P02,145,500),
-                    ServoMove(ServoId.P03,45,500),
-                    ServoMove(ServoId.P04,90,500),
-                    ServoMove(ServoId.P05,90,500))
+    r1_move_sequence_pick.start(poses_pick)
+    end_prog_2 = False 
+    while not end_prog_2: 
+        r1_move_sequence_pick.update()       
+
+        if r1_move_sequence_pick.status == RobotMoveSequenceStatus.FINISHED:
+            i +=1
+            r1_move_sequence_pick.reset_cycle()
+            r1_move_sequence_pick.start(poses_pick)
+            print("cyle:"+ str(i)+"/500")
+
+       
+        if i == 500:
+            end_prog_2 = True   
+
+        time.sleep(0.1)
+
     
-  
     
-    while i<1000:
-        R1ComRS232.MoveJ(*Pose1)
-        time.sleep(3)
-        
-        R1ComRS232.MoveJ(*Pose2)
-        
-        #time.sleep(1.5)
-
-        while True:
-            R1ComRS232.ComSerie.write(b"Q\r")
-
-            time.sleep(0.05)  # petite attente pour réponse
-
-            if R1ComRS232.ComSerie.in_waiting > 0:
-                resp = R1ComRS232.ComSerie.read(1).decode()
-
-                print("Status:", resp)
-
-                if resp == ".":
-                    print("Mouvement terminé")
-                    break
-
-            time.sleep(0.2)
-
-        i+=1
-        print(i)
-
-
     
     R1ComRS232.CommStop()
 
