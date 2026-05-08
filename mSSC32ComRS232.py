@@ -1,5 +1,6 @@
 import serial
 import time
+import math
 from typing import Optional
 from enum import Enum, auto
 from dataclasses import dataclass
@@ -9,7 +10,30 @@ import mTimer
 #2400 180°
 ServoNbPoint_0Deg = 600
 ServoNbPoint_180Deg = 2400
-i=0
+
+#AXE1 : rotation base
+#AXE2 : rotation epaule 135 --> part vers l'arrier
+#AXE3 : rotation bras 135 --> plié de a 45°
+#AXE4 : rotation main 90° aligné avec le bras, 0° plié pour pendulaire
+#AXE5 : rotation poignet
+#AXE6 : ouverture fermeture pince
+R1_HEIGHT_GROUND_TO_AXE2 = 75   # base a AXE2
+R1_SHOULDER_LENGTH = 157      # AXE2 a AXE3
+R1_ARM_LENGTH = 157           # AXE3 a AXE4
+R1_AXIS4_TO_GRIPPER = 100        # AXE4 a bout de pince  
+R1_CIRCLE_AREA_MIN = 100
+R1_CIRCLE_AREA_MAX = 250
+R1_CIRCLE_ANGLE_MIN = -90
+R1_CIRCLE_ANGLE_MAX = 90
+
+SERVO1_OFFSET_DEG= 90   
+
+servoP00_calib = [
+    (35, 12.5),
+    (45, 24.5),
+    (67.5, 58),
+    (90, 85)
+]
 
 class ServoUnit(Enum):
     Point = auto()
@@ -46,7 +70,6 @@ def StrServoMove(*servos : ServoMove)->str:
     cmd += "\r"
     return(cmd)
 
-
 def StrServoMoveBis(servos: list[ServoMove])->str:
     cmd = ""
     for s in servos:
@@ -54,10 +77,27 @@ def StrServoMoveBis(servos: list[ServoMove])->str:
     cmd += "\r"
     return(cmd)
 
-
 def ScaleDegToServoPoint(deg: float) -> int: 
     deg = max(min(deg,180),0) 
     return int (ServoNbPoint_0Deg + (deg / 180) * (ServoNbPoint_180Deg - ServoNbPoint_0Deg))
+
+def linear_piecewise(setpoint_deg:float, calib_table:list):
+    for i in range(len(calib_table) - 1):
+        c1, v1 = calib_table[i]
+        c2, v2 = calib_table[i+1]
+
+        if c1 <= setpoint_deg <= c2:
+            t = (setpoint_deg - c1) / (c2 - c1)
+            return v1 + t * (v2 - v1)
+
+    return calib_table[-1][1]
+
+@dataclass
+class ServoMoveXYZ:
+    x: float
+    y: float
+    z: float
+    speed: int
 
 class SSC32ComRS232:
     def __init__(self) -> None:
@@ -86,6 +126,51 @@ class SSC32ComRS232:
             self.ComSerie.write(cmd.encode())
             print("MoveJ")
             return(cmd)
+        
+    def MoveXYZ(self,p:ServoMoveXYZ):
+        theta1 = math.atan2(p.y, p.x)
+        angle_servo1 = math.degrees(theta1) + SERVO1_OFFSET_DEG
+
+        r = math.sqrt(p.x**2 + p.y**2)   
+        z = p.z + R1_AXIS4_TO_GRIPPER - R1_HEIGHT_GROUND_TO_AXE2
+        d = math.sqrt(r**2 + z**2)
+        cos_theta3 = (R1_SHOULDER_LENGTH**2 + R1_ARM_LENGTH**2 - d**2) / (2 * R1_SHOULDER_LENGTH * R1_ARM_LENGTH)
+        theta3 = math.acos(cos_theta3)
+        angle_servo3 = 180 - math.degrees(theta3)
+
+        theta2_triangle_r_z = math.atan2(z,r)
+        cos_theta2_triangle_shoulder_d = (R1_SHOULDER_LENGTH**2 + d**2 - R1_ARM_LENGTH**2) / (2 * R1_SHOULDER_LENGTH * d)
+        theta2_Trianger_shoulder_d = math.acos(cos_theta2_triangle_shoulder_d)
+        theta2 = theta2_triangle_r_z + theta2_Trianger_shoulder_d
+        angle_servo2 = math.degrees(theta2)
+
+        theta4_sum = (theta2 + theta3 )
+        theta4 = math.pi-theta4_sum
+        angle_servo4 = math.degrees(theta4)
+
+                 
+
+        print("tetha1: " + str(math.degrees(theta1)))
+        print("tetha2: " + str(math.degrees(theta2)))
+        print("tetha3: " + str(math.degrees(theta3)))
+        print("tetha4: " + str(math.degrees(theta4)))
+
+        print("AxeServo1: " + str(angle_servo1))
+        print("AxeServo2: " + str(angle_servo2))
+        print("AxeServo3: " + str(angle_servo3))
+        print("AxeServo4: " + str(angle_servo4))
+        cmd = StrServoMove(ServoMove(ServoId.P00,int(angle_servo1),p.speed), 
+                            ServoMove(ServoId.P01,int(angle_servo2),p.speed),
+                            ServoMove(ServoId.P02,int(angle_servo3),p.speed),
+                            ServoMove(ServoId.P03,int(angle_servo4),p.speed),
+                            )
+
+        if self.ComSerie is not None:
+            self.ComSerie.write(cmd.encode())
+            print("MoveXYZ")
+        pass
+
+
 
 
     def MoveJb(self, servos: list[ServoMove]):
@@ -216,8 +301,15 @@ if __name__=="__main__":
     R1ComRS232 = SSC32ComRS232()
     r1_move_sequence_pick = RobotMoveSequence(R1ComRS232)
     R1ComRS232.CommStart()
-    time.sleep(1)
+    time.sleep(0.1)
     #R1ComRS232.MoveJ_Init()
+
+    pose0 = [ServoMove(ServoId.P00,90,300), 
+        ServoMove(ServoId.P01,90,500),
+        ServoMove(ServoId.P02,90,500),
+        ServoMove(ServoId.P03,90,500),
+        ServoMove(ServoId.P04,90,500),
+        ServoMove(ServoId.P05,90,500)]
 
     pose1 = [ServoMove(ServoId.P00,90,300),
             ServoMove(ServoId.P01,145,500),
@@ -238,7 +330,8 @@ if __name__=="__main__":
 
 
     r1_move_sequence_pick.start(poses_pick)
-    end_prog_2 = False 
+    i=0
+    end_prog_2 = True 
     while not end_prog_2: 
         r1_move_sequence_pick.update()       
 
@@ -246,15 +339,26 @@ if __name__=="__main__":
             i +=1
             r1_move_sequence_pick.reset_cycle()
             r1_move_sequence_pick.start(poses_pick)
-            print("cyle:"+ str(i)+"/500")
+            print("cyle:"+ str(i)+"/10")
 
        
-        if i == 500:
+        if i == 10:
             end_prog_2 = True   
 
         time.sleep(0.1)
 
-    
+    R1ComRS232.MoveJ(*pose0)
+
+    #R1ComRS232.MoveXYZ(ServoMoveXYZ(270,0,80,250))
+    time.sleep(6)
+  #  R1ComRS232.MoveXYZ(ServoMoveXYZ(150,0,10,180))
+
+    #R1ComRS232.MoveXYZ(ServoMoveXYZ(150,0,10,250))
+
+
+
+
+
     
     
     R1ComRS232.CommStop()
