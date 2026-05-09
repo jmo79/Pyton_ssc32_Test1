@@ -1,6 +1,7 @@
 import serial
 import time
 import math
+import copy
 from typing import Optional
 from enum import Enum, auto
 from dataclasses import dataclass
@@ -28,12 +29,16 @@ R1_CIRCLE_ANGLE_MAX = 90
 
 SERVO1_OFFSET_DEG= 90   
 
-servoP00_calib = [
-    (35, 12.5),
-    (45, 24.5),
-    (67.5, 58),
-    (90, 85)
-]
+servoP01_calib = [
+    (20, 6),
+    (30, 18.5),
+    (40, 30),
+    (50, 42),
+    (60, 54),
+    (70, 65),
+    (80, 77),
+    (90, 88),
+    (100, 100)]
 
 class ServoUnit(Enum):
     Point = auto()
@@ -81,10 +86,10 @@ def ScaleDegToServoPoint(deg: float) -> int:
     deg = max(min(deg,180),0) 
     return int (ServoNbPoint_0Deg + (deg / 180) * (ServoNbPoint_180Deg - ServoNbPoint_0Deg))
 
-def linear_piecewise(setpoint_deg:float, calib_table:list):
+def linearizationAngle(setpoint_deg:float, calib_table:list):
     for i in range(len(calib_table) - 1):
-        c1, v1 = calib_table[i]
-        c2, v2 = calib_table[i+1]
+        v1, c1 = calib_table[i]
+        v2, c2 = calib_table[i+1]
 
         if c1 <= setpoint_deg <= c2:
             t = (setpoint_deg - c1) / (c2 - c1)
@@ -305,11 +310,11 @@ if __name__=="__main__":
     #R1ComRS232.MoveJ_Init()
 
     pose0 = [ServoMove(ServoId.P00,90,300), 
-        ServoMove(ServoId.P01,90,500),
-        ServoMove(ServoId.P02,90,500),
-        ServoMove(ServoId.P03,90,500),
-        ServoMove(ServoId.P04,90,500),
-        ServoMove(ServoId.P05,90,500)]
+        ServoMove(ServoId.P01,90-45,300),
+        ServoMove(ServoId.P02,50,300),
+        ServoMove(ServoId.P03,180,300),
+        ServoMove(ServoId.P04,90,300),
+        ServoMove(ServoId.P05,90,300)]
 
     pose1 = [ServoMove(ServoId.P00,90,300),
             ServoMove(ServoId.P01,145,500),
@@ -331,6 +336,8 @@ if __name__=="__main__":
 
     r1_move_sequence_pick.start(poses_pick)
     i=0
+    y=0
+    nom=""
     end_prog_2 = True 
     while not end_prog_2: 
         r1_move_sequence_pick.update()       
@@ -347,13 +354,25 @@ if __name__=="__main__":
 
         time.sleep(0.1)
 
-    R1ComRS232.MoveJ(*pose0)
+    while nom != "oui":     # essai test linearisation nom != "oui"
+        pose0_linearization = copy.deepcopy(pose0) 
+        pose0_linearization[1].pos = linearizationAngle(pose0[1].pos,servoP01_calib)
+        R1ComRS232.MoveJ(*pose0_linearization)
+
+        print("consigne angle axe 2:" + str(pose0[1].pos))
+        print("consigne angle axe 2 lin:" + str(pose0_linearization[1].pos))
+        print("consigne angle axe 3:" + str(pose0[2].pos))
+        print("consigne angle axe 3 lin:" + str(pose0_linearization[2].pos))
+        pose0[2].pos += 10
+        nom = input("voulez vous arreter la boucle oui/non ")
+
 
     #R1ComRS232.MoveXYZ(ServoMoveXYZ(270,0,80,250))
-    time.sleep(6)
+    time.sleep(1)
   #  R1ComRS232.MoveXYZ(ServoMoveXYZ(150,0,10,180))
 
     #R1ComRS232.MoveXYZ(ServoMoveXYZ(150,0,10,250))
+
 
 
 
