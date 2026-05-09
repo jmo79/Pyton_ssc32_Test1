@@ -147,7 +147,8 @@ class SSC32ComRS232:
         cos_theta2_triangle_shoulder_d = (R1_SHOULDER_LENGTH**2 + d**2 - R1_ARM_LENGTH**2) / (2 * R1_SHOULDER_LENGTH * d)
         theta2_Trianger_shoulder_d = math.acos(cos_theta2_triangle_shoulder_d)
         theta2 = theta2_triangle_r_z + theta2_Trianger_shoulder_d
-        angle_servo2 = math.degrees(theta2)
+        angle_servo2_th = math.degrees(theta2)
+        angle_servo2 = linearizationAngle(angle_servo2_th,servoP01_calib)
 
         theta4_sum = (theta2 + theta3 )
         theta4 = math.pi-theta4_sum
@@ -333,7 +334,6 @@ if __name__=="__main__":
     poses_pick = [pose1,pose2,pose1,pose2]
     poses_place = [pose1,pose2,pose1,pose2]
 
-
     r1_move_sequence_pick.start(poses_pick)
     i=0
     y=0
@@ -354,7 +354,7 @@ if __name__=="__main__":
 
         time.sleep(0.1)
 
-    while nom != "oui":     # essai test linearisation nom != "oui"
+    while False:     # essai test linearisation nom != "oui"
         pose0_linearization = copy.deepcopy(pose0) 
         pose0_linearization[1].pos = linearizationAngle(pose0[1].pos,servoP01_calib)
         R1ComRS232.MoveJ(*pose0_linearization)
@@ -366,10 +366,23 @@ if __name__=="__main__":
         pose0[2].pos += 10
         nom = input("voulez vous arreter la boucle oui/non ")
 
+    
+    pose_xyz_1= ServoMoveXYZ(120,0,0,500)
+    pose_xyz_2= ServoMoveXYZ(270,0,0,500)
+    pose_xyz_3= ServoMoveXYZ(270,0,50,500)
+    pose_xyz_4= ServoMoveXYZ(120,0,50,500)
 
-    #R1ComRS232.MoveXYZ(ServoMoveXYZ(270,0,80,250))
-    time.sleep(1)
-  #  R1ComRS232.MoveXYZ(ServoMoveXYZ(150,0,10,180))
+    poses_xyz = [pose_xyz_1,pose_xyz_2]
+
+    while True:
+        R1ComRS232.MoveXYZ(pose_xyz_1)
+        time.sleep(1)
+        R1ComRS232.MoveXYZ(pose_xyz_2)
+        time.sleep(2)
+        R1ComRS232.MoveXYZ(pose_xyz_3)
+        time.sleep(1)
+        R1ComRS232.MoveXYZ(pose_xyz_4)
+        time.sleep(2)
 
     #R1ComRS232.MoveXYZ(ServoMoveXYZ(150,0,10,250))
 
